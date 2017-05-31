@@ -49,17 +49,8 @@ class RoverState():
         self.steer = 0 # Current steering angle
         self.throttle = 0 # Current throttle value
         self.brake = 0 # Current brake value
-
-        self.dst_size = 5
-        self.bottom_offset = 5
-
-        self.nav_angles = None  # Angles of navigable terrain pixels
-        self.nav_dists = None  # Distances of navigable terrain pixels
-        self.obj_angles = None  # Angles of obstacle pixels
-        self.obj_dists = None  # Distances of obstacle pixels
-        self.rock_dists = None  # Distances of rock pixels
-        self.rock_angles = None  # Angles of rock pixels
-
+        self.nav_angles = None # Angles of navigable terrain pixels
+        self.nav_dists = None # Distances of navigable terrain pixels
         self.ground_truth = ground_truth_3d # Ground truth worldmap
         self.mode = 'forward' # Current mode (can be forward or stop)
         self.throttle_set = 0.2 # Throttle setting when accelerating
@@ -80,10 +71,23 @@ class RoverState():
         # obstacles and rock samples
         self.worldmap = np.zeros((200, 200, 3), dtype=np.float)
         self.samples_pos = None # To store the actual sample positions
+        self.samples_to_find = 0 # To store the initial count of samples
         self.samples_found = 0 # To count the number of samples found
         self.near_sample = 0 # Will be set to telemetry value data["near_sample"]
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
+        self.dst_size = 5
+        self.bottom_offset = 5
+        self.nav_angles = None  # Angles of navigable terrain pixels
+        self.nav_dists = None  # Distances of navigable terrain pixels
+        self.obj_angles = None  # Angles of obstacle pixels
+        self.obj_dists = None  # Distances of obstacle pixels
+        self.rock_dists = None  # Distances of rock pixels
+        self.rock_angles = None  # Angles of rock pixels
+        self.rock_pick = 0 # Set the number of picked rocks
+        self.time_start = time.time()
+        self.max_throttle = 1 # Maximum throttle
+        self.start_point = (99.7, 85.6)
 # Initialize our rover
 Rover = RoverState()
 
@@ -121,7 +125,6 @@ def telemetry(sid, data):
 
             # Create output images to send to server
             out_image_string1, out_image_string2 = create_output_images(Rover)
-            #out_image_string1, out_image_string2 = None, None
 
             # The action step!  Send commands to the rover!
             commands = (Rover.throttle, Rover.brake, Rover.steer)
@@ -132,11 +135,6 @@ def telemetry(sid, data):
                 send_pickup()
                 # Reset Rover flags
                 Rover.send_pickup = False
-
-            if Rover.picking_up and not Rover.near_sample:
-                Rover.brake = 0
-                Rover.picking_up = False
-                Rover.mode = 'forward'
         # In case of invalid telemetry, send null commands
         else:
 

@@ -291,9 +291,12 @@ def perception_step(Rover):
 
     terrain_select, rock_select, obstacle_select = color_thresh(
         img, terrain_threshold, rock_threshold, obstacle_threshold)
+
+    # 2) Apply perspective transform
     terrain_select = perspect_transform(terrain_select, source, destination)
     rock_select = perspect_transform(rock_select, source, destination)
     obstacle_select = perspect_transform(obstacle_select, source, destination)
+
 
     # 4) Update Rover.vision_image (this will be displayed on left side of screen)
     #Rover.vision_image[:, :, 0] = obstacle_colorsel * 255
