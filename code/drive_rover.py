@@ -76,6 +76,8 @@ class RoverState():
         self.near_sample = 0 # Will be set to telemetry value data["near_sample"]
         self.picking_up = 0 # Will be set to telemetry value data["picking_up"]
         self.send_pickup = False # Set to True to trigger rock pickup
+
+        # New added state
         self.dst_size = 5
         self.bottom_offset = 5
         self.nav_angles = None  # Angles of navigable terrain pixels
@@ -84,10 +86,13 @@ class RoverState():
         self.obj_dists = None  # Distances of obstacle pixels
         self.rock_dists = None  # Distances of rock pixels
         self.rock_angles = None  # Angles of rock pixels
-        self.rock_pick = 0 # Set the number of picked rocks
-        self.time_start = time.time()
+        self.time_start = time.time() # Initial start time from rover stuck
         self.max_throttle = 1 # Maximum throttle
-        self.start_point = (99.7, 85.6)
+        self.start_point = (99.7, 85.6) # Initial start point
+        self.turn_to_start = False # Initial turning state at beginning of back home
+        self.home_dist = 0 # Distance to home point
+        self.angle_error = 0 # Yaw angle error to home point
+
 # Initialize our rover
 Rover = RoverState()
 
