@@ -37,7 +37,6 @@ def color_thresh(img, rgb_thresh=(120, 90, 80)):
     vertices = np.array([[(0, imshape[0]), (imshape[1], imshape[0]),
                           (imshape[1], imshape[0] * 0.3), (0, imshape[0] * 0.3)]], dtype=np.int32)
     masked_img = region_of_interest(img, vertices)
-
     # Require that each pixel be above all three threshold values in RGB
     # above_thresh will now contain a boolean array with "True"
     # where threshold was met
@@ -86,10 +85,11 @@ def rock_thresh(img, rgb_thresh=([100, 100, 0], [190, 190, 50])):
     rock_select = cv2.inRange(img, low_threshold, high_threshold)
     return rock_select
 
-# Define a function to convert to rover-centric coordinates
-
 
 def rover_coords(binary_img):
+    """Convert image to Rover-Centric Coordinates.
+    Input: binary image
+    Output: Rover centered coordinates image"""
     # Identify nonzero pixels
     ypos, xpos = binary_img.nonzero()
     # Calculate pixel positions with reference to the rover position being at the
@@ -99,10 +99,9 @@ def rover_coords(binary_img):
     return x_pixel, y_pixel
 
 
-# Define a function to convert to radial coords in rover space
 def to_polar_coords(x_pixel, y_pixel):
-    # Convert (x_pixel, y_pixel) to (distance, angle)
-    # in polar coordinates in rover space
+    """Convert x_pixel, y_pixel)
+    to (distance, angle) radial coords in rover space"""
     # Calculate distance to each pixel
     dist = np.sqrt(x_pixel**2 + y_pixel**2)
     # Calculate angle away from vertical for each pixel
@@ -113,31 +112,30 @@ def to_polar_coords(x_pixel, y_pixel):
 
 
 def rotate_pix(xpix, ypix, yaw):
-    # TODO:
+    """Apply a rotation to pixel positions using rotation matrix
+    Input: xpix, ypix, yaw_rad
+    Output: xpix_ratated, ypix_rotated"""
     # Convert yaw to radians
-    # Apply a rotation
     yaw_rad = yaw * np.pi / 180
+    # Apply a rotation
     xpix_rotated = xpix * np.cos(yaw_rad) - ypix * np.sin(yaw_rad)
     ypix_rotated = xpix * np.sin(yaw_rad) + ypix * np.cos(yaw_rad)
     # Return the result
     return xpix_rotated, ypix_rotated
 
-# Define a function to perform a translation
-
 
 def translate_pix(xpix_rot, ypix_rot, xpos, ypos, scale):
-    # TODO:
+    """Translate and scale pix to worldmap"""
     # Apply a scaling and a translation
     xpix_translated = xpos + (xpix_rot / scale)
     ypix_translated = ypos + (ypix_rot / scale)
     # Return the result
     return xpix_translated, ypix_translated
 
-# Define a function to apply rotation and translation (and clipping)
-# Once you define the two functions above this function should work
-
 
 def pix_to_world(xpix, ypix, xpos, ypos, yaw, world_size, scale):
+    """Combine the rotate_pix and translate_pix functions
+    to perform world coordinates transform"""
     # Apply rotation
     xpix_rot, ypix_rot = rotate_pix(xpix, ypix, yaw)
     # Apply translation
@@ -152,7 +150,8 @@ def pix_to_world(xpix, ypix, xpos, ypos, yaw, world_size, scale):
 
 
 def perspect_transform(img, src, dst):
-
+    """Perspective transform function
+    to warp the camera image into top view"""
     M = cv2.getPerspectiveTransform(src, dst)
     # keep same size as input image
     warped = cv2.warpPerspective(img, M, (img.shape[1], img.shape[0]))
@@ -162,8 +161,7 @@ def perspect_transform(img, src, dst):
 
 # Apply the above functions in succession and update the Rover state accordingly
 def perception_step(Rover):
-    # Perform perception steps to update Rover()
-    # TODO:
+    """Perform perception steps to update Rover()"""
     # NOTE: camera image is coming to you in Rover.img
     img = Rover.img
     # 1) Define source and destination points for perspective transform
@@ -178,24 +176,16 @@ def perception_step(Rover):
                               [img.shape[1] / 2 - dst_size, img.shape[0] -
                                2 * dst_size - bottom_offset]])
 
-    #warped = perspect_transform(img, source, destination)
-    #terrain_colorsel = color_thresh(warped, rgb_thresh=terrain_threshold)
-    #obstacle_colorsel = obstacle_thresh(warped, terrain_colorsel, rgb_thresh=obstacle_threshold)
-    #rock_colorsel = rock_thresh(warped, rgb_thresh=rock_threshold)
-
-    # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
+    # 2) Apply color threshold to identify navigable terrain/obstacles/rock samples
     terrain_threshold = (160, 160, 160)  # (130,120,100)
     obstacle_threshold = ([70, 70, 70], [160, 160, 160])
     rock_threshold = ([100, 100, 0], [200, 200, 50])
-
-    # terrain_select, rock_select, obstacle_select = color_thresh(
-    #   img, terrain_threshold, rock_threshold, obstacle_threshold)
 
     terrain_select = color_thresh(img, terrain_threshold)
     rock_select = rock_thresh(img, rock_threshold)
     obstacle_select = obstacle_thresh(img, terrain_select, obstacle_threshold)
 
-    # 2) Apply perspective transform
+    # 3) Apply perspective transform
     terrain_select = perspect_transform(terrain_select, source, destination)
     rock_select = perspect_transform(rock_select, source, destination)
     obstacle_select = perspect_transform(obstacle_select, source, destination)

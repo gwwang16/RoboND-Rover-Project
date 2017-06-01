@@ -11,14 +11,16 @@ def calculate_angle_error(x_1, x_2, yaw):
     yaw is rover yaw in degree.'''
     start_point = np.array(x_1)
     rover_point = np.array(x_2)
-    angle_rad = np.arctan2(start_point[1] - rover_point[1], start_point[0] - rover_point[0])
+    angle_rad = np.arctan2(
+        start_point[1] - rover_point[1], start_point[0] - rover_point[0])
     # transfer the negative angle_rad to [pi, 2pi]
     if angle_rad < 0:
-        angle_rad = angle_rad + 2* np.pi
+        angle_rad = angle_rad + 2 * np.pi
     # transfer radians to degree
     angle_degree = angle_rad * 180 / np.pi
     angle_error = angle_degree - yaw
     return angle_error
+
 
 def left_side_mode(obstacle_img, nav_angles):
     '''Move along left side'''
@@ -52,10 +54,12 @@ def left_side_mode(obstacle_img, nav_angles):
             steer = np.clip(nav_angle_q75, -15, 15)
     return steer
 
+
 def return_start_point(Rover):
     '''Return to the starting pint when the rover complete some special tasks'''
     # Calculate angle and distance from current point to start point.
-    Rover.angle_error = calculate_angle_error(Rover.start_point, Rover.pos, Rover.yaw)
+    Rover.angle_error = calculate_angle_error(
+        Rover.start_point, Rover.pos, Rover.yaw)
 
     if np.absolute(Rover.angle_error) > 0.5 and (not Rover.turn_to_start):
         print("Turning tarward o home point!")
@@ -74,8 +78,8 @@ def return_start_point(Rover):
                 # when stopped it will induce 4-wheel turning
                 Rover.steer = np.clip(Rover.angle_error, -15, 15)
                 # Update avaliable condition
-                Rover.angle_error = calculate_angle_error(Rover.start_point, Rover.pos, Rover.yaw)
-
+                Rover.angle_error = calculate_angle_error(
+                    Rover.start_point, Rover.pos, Rover.yaw)
 
             else:
                 Rover.steer = 0
@@ -94,8 +98,10 @@ def return_start_point(Rover):
             nav_angle_low = np.maximum(nav_angle_q30, -15)
             nav_angle_upper = np.minimum(nav_angle_q70, 15)
 
-            Rover.steer = np.clip(Rover.angle_error, nav_angle_low, nav_angle_upper)
-            Rover.angle_error = calculate_angle_error(Rover.start_point, Rover.pos, Rover.yaw)
+            Rover.steer = np.clip(
+                Rover.angle_error, nav_angle_low, nav_angle_upper)
+            Rover.angle_error = calculate_angle_error(
+                Rover.start_point, Rover.pos, Rover.yaw)
 
             Rover.brake = 0
             # Use a larger throttle to back home
@@ -116,6 +122,7 @@ def return_start_point(Rover):
             Rover.mode = 'stop'
             Rover = stop_mode(Rover)
     return Rover
+
 
 def pickup_mode(Rover):
     '''Pick up samples'''
@@ -144,6 +151,7 @@ def pickup_mode(Rover):
         else:
             Rover.mode = 'forward'
     return Rover
+
 
 def stuck_mode(Rover):
     """try to solve stuck conditions"""
@@ -190,6 +198,7 @@ def stuck_mode(Rover):
         Rover.throttle = 0
     return Rover
 
+
 def stop_mode(Rover):
     '''Stop and turn the wheel when there is no path forward'''
     if len(Rover.rock_angles) > 0:
@@ -227,7 +236,7 @@ def stop_mode(Rover):
 
 
 def decision_step(Rover):
-    '''decision process'''
+    """Decision process for rover moving"""
     # Check if we have vision data to make decisions with
     if Rover.nav_angles is not None:
         if Rover.samples_found < 6:
@@ -248,7 +257,8 @@ def decision_step(Rover):
                 elif len(Rover.nav_angles) >= Rover.stop_forward:
                     # If mode is forward, navigable terrain looks good
                     # and velocity is below max, then throttle
-                    Rover.steer = left_side_mode(Rover.vision_image[:, :, 0], Rover.nav_angles)
+                    Rover.steer = left_side_mode(
+                        Rover.vision_image[:, :, 0], Rover.nav_angles)
 
                     if Rover.vel < Rover.max_vel:
                         # Set a larger throttle value at begginging
