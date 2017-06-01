@@ -1,4 +1,7 @@
 ## Project: Search and Sample Return
+
+**Note :** (Jupyter Notebook, `drive_rover.py`, `supporting_functions.py`, `decision.py` and `perception.py`) are in `./code` folder.  Test output video is in `./output` folder. The video for **Udacity Robotics Sample Return Challenge** can be found [here](Udacity Robotics Sample Return Challenge).
+
 ---
 
 
