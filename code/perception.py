@@ -57,8 +57,8 @@ def color_thresh(img, rgb_thresh=(120, 90, 80), rock_rgb_thresh=([100, 100, 0], 
     sky_high_threshold = np.array(ob_rgb_thresh[1], dtype="uint8")
 
     # Using the upper half to select sky area
-    sky_vertices = np.array([[(0, 0), (imshape[1], 0),
-                              (imshape[1], imshape[0] * 0.4), (0, imshape[0] * 0.4)]], dtype=np.int32)
+    sky_vertices = np.array([[(0, 0), (imshape[1], 0), (imshape[1],
+                                                        imshape[0] * 0.4), (0, imshape[0] * 0.4)]], dtype=np.int32)
     sky_masked_image = region_of_interest(img, sky_vertices)
     sky_select = cv2.inRange(
         sky_masked_image, sky_low_threshold, sky_high_threshold)
@@ -277,17 +277,15 @@ def perception_step(Rover):
                               [img.shape[1] / 2 - dst_size, img.shape[0] -
                                2 * dst_size - bottom_offset]])
 
-    # 2) Apply perspective transform
     #warped = perspect_transform(img, source, destination)
+    #terrain_colorsel = color_thresh(warped, rgb_thresh=terrain_threshold)
+    #obstacle_colorsel = obstacle_thresh(warped, terrain_colorsel, rgb_thresh=obstacle_threshold)
+    #rock_colorsel = rock_thresh(warped, rgb_thresh=rock_threshold)
 
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
     terrain_threshold = (160, 160, 160)  # (130,120,100)
     obstacle_threshold = ([70, 70, 70], [160, 160, 160])
     rock_threshold = ([100, 100, 0], [200, 200, 50])
-
-    #terrain_colorsel = color_thresh(warped, rgb_thresh=terrain_threshold)
-    #obstacle_colorsel = obstacle_thresh(warped, terrain_colorsel, rgb_thresh=obstacle_threshold)
-    #rock_colorsel = rock_thresh(warped, rgb_thresh=rock_threshold)
 
     terrain_select, rock_select, obstacle_select = color_thresh(
         img, terrain_threshold, rock_threshold, obstacle_threshold)
@@ -297,14 +295,11 @@ def perception_step(Rover):
     rock_select = perspect_transform(rock_select, source, destination)
     obstacle_select = perspect_transform(obstacle_select, source, destination)
 
-
     # 4) Update Rover.vision_image (this will be displayed on left side of screen)
-    #Rover.vision_image[:, :, 0] = obstacle_colorsel * 255
-    #Rover.vision_image[:, :, 1] = rock_colorsel * 255
-    #Rover.vision_image[:, :, 2] = terrain_colorsel * 255
     Rover.vision_image[:, :, 0] = obstacle_select * 255
     Rover.vision_image[:, :, 1] = rock_select * 255
     Rover.vision_image[:, :, 2] = terrain_select * 255
+
     # 5) Convert map image pixel values to rover-centric coords
     xpix, ypix = rover_coords(terrain_select)
     xobstacle, yobstacle = rover_coords(obstacle_select)
@@ -323,17 +318,14 @@ def perception_step(Rover):
 
     # 7) Update Rover worldmap (to be displayed on right side of screen)
     # mapping are valid when roll and pitch angles are near zero.
-    roll_condition = [Rover.roll < 0.5, Rover.roll > 359.5]
-    pitch_condition = [Rover.pitch < 0.5, Rover.pitch > 359.5]
+    roll_condition = [Rover.roll < 0.4, Rover.roll > 359.6]
+    pitch_condition = [Rover.pitch < 0.4, Rover.pitch > 359.6]
     if any(roll_condition) and any(pitch_condition):
         Rover.worldmap[obstacle_y_world, obstacle_x_world, 0] += 1
         Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
         Rover.worldmap[navigable_y_world, navigable_x_world, 2] += 1
 
     # 8) Convert rover-centric pixel positions to polar coordinates
-    # Update Rover pixel distances and angles
-        # Rover.nav_dists = rover_centric_pixel_distances
-        # Rover.nav_angles = rover_centric_angles
     Rover.nav_dists, Rover.nav_angles = to_polar_coords(xpix, ypix)
     Rover.obs_dists, Rover.obs_angles = to_polar_coords(xobstacle, yobstacle)
     Rover.rock_dists, Rover.rock_angles = to_polar_coords(xrock, yrock)
