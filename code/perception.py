@@ -81,9 +81,19 @@ def rock_thresh(img, rgb_thresh=([100, 100, 0], [190, 190, 50])):
     '''rock thresh function'''
     low_threshold = np.array(rgb_thresh[0], dtype="uint8")
     high_threshold = np.array(rgb_thresh[1], dtype="uint8")
-    # Using mask fuction to select the rock
+    # Using mask function to select the rock
     rock_select = cv2.inRange(img, low_threshold, high_threshold)
     return rock_select
+
+
+def rock_thresh_hsv(img, hsv_thresh=([20, 65, 130], [28, 255, 230])):
+    '''rock thresh function use hsv color'''
+    low_threshold = np.array(hsv_thresh[0], dtype="uint8")
+    high_threshold = np.array(hsv_thresh[1], dtype="uint8")
+    # Using mask function to select the rock
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    mask = cv2.inRange(hsv_img, low_threshold, high_threshold)
+    return mask
 
 
 def rover_coords(binary_img):
@@ -179,10 +189,12 @@ def perception_step(Rover):
     # 2) Apply color threshold to identify navigable terrain/obstacles/rock samples
     terrain_threshold = (160, 160, 160)  # (130,120,100)
     obstacle_threshold = ([70, 70, 70], [160, 160, 160])
-    rock_threshold = ([100, 100, 0], [200, 200, 50])
+    # rock_threshold = ([100, 100, 0], [200, 200, 50])
+    rock_hsv_thresh = ([20, 65, 130], [28, 255, 230])
 
     terrain_select = color_thresh(img, terrain_threshold)
-    rock_select = rock_thresh(img, rock_threshold)
+    # rock_select = rock_thresh(img, rock_threshold)
+    rock_select = rock_thresh_hsv(img, rock_hsv_thresh)
     obstacle_select = obstacle_thresh(img, terrain_select, obstacle_threshold)
 
     # 3) Apply perspective transform
